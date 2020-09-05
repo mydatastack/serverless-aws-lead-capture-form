@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: DynamoDB Table for storing lead information
+
+
+Parameters:
+  Name:
+    Type: String
+    MinLength: 3
+    MaxLength: 30
+  Stage:
+    Type: String
+    MinLength: 3
+    MaxLenght: 30
+
+
+Resources:
+  
+  LeadsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: 
+        Fn::Sub: "${Name}-${Stage}-leadform"
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: ts
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: ts
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+
+  LeadsTableStreamArn:
+    Type: AWS::SSM::Parameter
+    DependsOn:
+      - LeadsTable
+    Properties:
+      Name:
+        Fn::Sub: "/application/${Name}/${Stage}/db/arn/leadstablestream"
+      Type: String
+      Value:
+        Fn::GetAtt: [LeadsTable, StreamArn]

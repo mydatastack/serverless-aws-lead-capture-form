@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Leadform for datastack.de
+
+
+
+Resources:
+  GraphQLAPIEndpoint:
+    Type: AWS::Serverless::Application
+    Parameters:
+      Location: graphql.template.yaml
+  DynamoDBTable:
+    Type: AWS::Serverless::Application
+    Parameters:
+      Location: dynamodb.tempalte.yaml
+  LambdaFunctions:
+    Type: AWS::Serverless::Application
+    Parameters:
+      Location: lambda.template.yaml
+

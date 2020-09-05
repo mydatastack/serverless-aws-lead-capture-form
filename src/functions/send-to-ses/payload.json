@@ -1,0 +1,46 @@
+{
+    "Records": [
+        {
+            "eventID": "845a86fc8308a55eee9cf4c326c8adfb",
+            "eventName": "INSERT",
+            "eventVersion": "1.1",
+            "eventSource": "aws:dynamodb",
+            "awsRegion": "eu-central-1",
+            "dynamodb": {
+                "ApproximateCreationDateTime": 1599306554,
+                "Keys": {
+                    "id": {
+                        "S": "001"
+                    },
+                    "ts": {
+                        "S": "2020-09-05T03:07:44+0000"
+                    }
+                },
+                "NewImage": {
+                    "firstName": {
+                        "S": "Dimitri"
+                    },
+                    "form": {
+                        "S": "The secret behind every startup"
+                    },
+                    "windowLocation": {
+                        "S": "https://www.datastack.de/startups"
+                    },
+                    "id": {
+                        "S": "001"
+                    },
+                    "email": {
+                        "S": "growth@datastack.de"
+                    },
+                    "ts": {
+                        "S": "2020-09-05T03:07:44+0000"
+                    }
+                },
+                "SequenceNumber": "12000000000005538505540",
+                "SizeBytes": 184,
+                "StreamViewType": "NEW_AND_OLD_IMAGES"
+            },
+            "eventSourceARN": "arn:aws:dynamodb:eu-central-1:272589676550:table/lead-local-test/stream/2020-09-05T11:44:56.548"
+        }
+    ]
+}
