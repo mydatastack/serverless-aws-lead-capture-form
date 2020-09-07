@@ -1,8 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: Leadform for datastack.de
-
-
 Parameters:
   Name:
     Type: String
@@ -13,14 +11,12 @@ Parameters:
     Type: String
     MinLength: 3
     MaxLength: 30
-    Type: String
     Default: local
-
 Resources:
   DynamoDBTable:
     Type: AWS::Serverless::Application
     Properties:
-      Location: dynamodb.template.yaml
+      Location: https://s3.eu-central-1.amazonaws.com/cfn-artifacts-datastack-leadform/76d9675f3af40280d895ed7c4d01642e.template
       Parameters:
         Name:
           Ref: Name
@@ -29,20 +25,9 @@ Resources:
   LambdaFunctions:
     Type: AWS::Serverless::Application
     DependsOn:
-      - DynamoDBTable
+    - DynamoDBTable
     Properties:
-      Location: lambda.template.yaml
-      Parameters:
-        Name:
-          Ref: Name
-        Stage:
-          Ref: Stage
-  GraphQLEndpoint:
-    Type: AWS::Serverless::Application
-    DependsOn:
-      - DynamoDBTable
-    Properties:
-      Location: graphql.template.yaml
+      Location: https://s3.eu-central-1.amazonaws.com/cfn-artifacts-datastack-leadform/e96f0c0ecc93b5971b3bc86a3d1d78c0.template
       Parameters:
         Name:
           Ref: Name

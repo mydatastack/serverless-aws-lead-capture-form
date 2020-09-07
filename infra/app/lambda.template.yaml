@@ -13,8 +13,6 @@ Parameters:
     Type: String
     MinLength: 3
     MaxLength: 30
-  LeadsTableStreamArn:
-    Type: "AWS::SSM::Parameter::Value<String>"
 
 
 Resources:
@@ -35,14 +33,12 @@ Resources:
                 - dynamodb:GetShardIterator
                 - dynamodb:ListStreams
                 - dynamodb:GetRecords
-              Resources:
-                - Ref: LeadsTableStreamArn
+              Resource: !Sub "{{resolve:ssm:/applications/${Name}/${Stage}/db/arn/leadstablestream:1}}"
       Events:
         Stream:
           Type: DynamoDB
           Properties:
-            Stream:
-              Ref: LeadsTableStreamArn
-            Batchsize: 10
+            Stream: !Sub "{{resolve:ssm:/applications/${Name}/${Stage}/db/arn/leadstablestream:1}}"
+            BatchSize: 10
             StartingPosition: TRIM_HORIZON
 
