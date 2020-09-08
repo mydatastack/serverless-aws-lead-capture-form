@@ -8,7 +8,7 @@ Parameters:
     Type: String
     MinLength: 3
     MaxLength: 30
-    Default: datastack-leadform
+    Default: dsleadform
   Stage:
     Type: String
     MinLength: 3
@@ -17,34 +17,125 @@ Parameters:
     Default: local
 
 Resources:
-  DynamoDBTable:
-    Type: AWS::Serverless::Application
+
+  LeadsTable:
+    Type: AWS::DynamoDB::Table
     Properties:
-      Location: dynamodb.template.yaml
-      Parameters:
-        Name:
-          Ref: Name
-        Stage:
-          Ref: Stage
-  LambdaFunctions:
-    Type: AWS::Serverless::Application
-    DependsOn:
-      - DynamoDBTable
+      TableName: 
+        Fn::Sub: "${Name}-${Stage}-leadform"
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: ts
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: ts
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+
+  SendEmailToSES:
+    Type: AWS::Serverless::Function
     Properties:
-      Location: lambda.template.yaml
-      Parameters:
-        Name:
-          Ref: Name
-        Stage:
-          Ref: Stage
-  GraphQLEndpoint:
-    Type: AWS::Serverless::Application
-    DependsOn:
-      - DynamoDBTable
+      Handler: main.handler
+      CodeUri: ../../src/functions/send-to-ses/
+      Runtime: python3.8
+      MemorySize: 128
+      Timeout: 5
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:DescribeStream
+                - dynamodb:GetShardIterator
+                - dynamodb:ListStreams
+                - dynamodb:GetRecords
+              Resource: 
+                - Fn::GetAtt: [LeadsTable, StreamArn] 
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+              Resource: 
+                - Fn::Sub: "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*"
+      Events:
+        Stream:
+          Type: DynamoDB
+          Properties:
+            Stream: 
+              Fn::GetAtt: [LeadsTable, StreamArn]
+            BatchSize: 10
+            StartingPosition: TRIM_HORIZON
+
+  HTTPResource:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        RestApiId: { Ref: HTTPRestApi }
+        ParentId: { Fn::GetAtt: [ HTTPRestApi, RootResourceId ] }
+        PathPart: leads
+
+  HTTPRestApi:
+    Type: AWS::ApiGateway::RestApi
     Properties:
-      Location: graphql.template.yaml
-      Parameters:
-        Name:
-          Ref: Name
-        Stage:
-          Ref: Stage
+      Name: !Sub "${Stage}-${Name}-api"
+      Description: Products HTTP endpoint to put data in DynamoDB
+
+  HTTPDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: [ HTTPMethod ]
+    Properties:
+      RestApiId: { Ref: HTTPRestApi }
+      StageName: !Sub "${Stage}"
+
+  HTTPMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      Integration:
+        Type: AWS
+        IntegrationHttpMethod: POST
+        Credentials: { Fn::GetAtt: [ IAMRole, Arn ] }
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:dynamodb:action/PutItem"
+        RequestTemplates:
+          application/json: !Sub "{ \"TableName\": \"${LeadsTable}\",
+                                    \"Item\":
+                                      { \"id\": { \"S\": \"$context.requestId\" },
+                                        \"ts\": { \"S\": \"$context.requestTime\"},
+                                        \"firstName\": { \"S\": \"$input.path('$.firstName')\"},
+                                        \"email\": { \"S\": \"$input.path('$.email')\"},
+                                        \"windowLocation\": { \"S\": \"$input.path('$.windowLocation')\"},
+                                        \"form\": { \"S\": \"$input.path('$.form')\"}
+                                      }
+                                }"
+        PassthroughBehavior: WHEN_NO_MATCH
+        IntegrationResponses:
+          - StatusCode: 200
+      ResourceId: { Ref: HTTPResource }
+      RestApiId: { Ref: HTTPRestApi }
+      MethodResponses:
+        - StatusCode: 200
+
+  IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: [ apigateway.amazonaws.com ] }
+            Action: [ sts:AssumeRole ]
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [dynamodb:PutItem, dynamodb:ListTables]
+                Resource: { Fn::GetAtt: [ LeadsTable, Arn ] } 

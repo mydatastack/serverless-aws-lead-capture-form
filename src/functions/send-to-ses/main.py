@@ -2,10 +2,11 @@ import boto3
 import json
 
 client = boto3.client("ses")
+email = "growth@datastack.de"
 
 def send_email(event):
     return client.send_email(
-            Source="growth@datastack.de",
+            Source= email,
             Destination={
                     "ToAddresses": [
                             "growth@datastack.de" ]},

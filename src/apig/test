@@ -1,0 +1,1 @@
+curl -X POST -H "Content-Type: application/json" -d @./payload.json https://xys2hzakue.execute-api.eu-central-1.amazonaws.com/local/leads

@@ -1,4 +1,4 @@
-STACK ?= datastack-leadform
+STACK ?= dsleadform
 BUCKET ?= cfn-artifacts-datastack-leadform
 
 create_bucket:
@@ -12,3 +12,5 @@ validate:
 	@aws cloudformation validate-template --template-body file://infra/app/template.yaml
 	@aws cloudformation validate-template --template-body file://infra/app/dynamodb.template.yaml
 	@aws cloudformation validate-template --template-body file://infra/app/lambda.template.yaml
+	@aws cloudformation validate-template --template-body file://infra/app/apig.template.yaml
+
